@@ -3,7 +3,6 @@
 
 SET(TRACE TRUE)
 SET(HAVE_G2O FALSE) 
-SET(USE_ROS TRUE) # Set FALSE if you want to build this package without Catkin
 SET(DEBUG_OUTPUT FALSE) # Only relevant if build without ROS
 
 ################################################################################
@@ -21,9 +20,6 @@ IF(TRACE)
 ENDIF()
 IF(HAVE_G2O)
   ADD_DEFINITIONS(-DUSE_BUNDLE_ADJUSTMENT)
-ENDIF()
-IF(USE_ROS)
-  ADD_DEFINITIONS(-DSVO_USE_ROS)
 ENDIF()
 IF(DEBUG_OUTPUT)
   ADD_DEFINITIONS(-DSVO_DEBUG_OUTPUT)
@@ -50,19 +46,9 @@ FIND_PACKAGE(Sophus REQUIRED)
 FIND_PACKAGE(fast REQUIRED)
 FIND_PACKAGE(Boost REQUIRED COMPONENTS thread system)
 
-IF(USE_ROS)
-  FIND_PACKAGE(catkin REQUIRED COMPONENTS roscpp roslib cmake_modules vikit_common vikit_ros)
-  catkin_package(
-      DEPENDS Eigen OpenCV Sophus Boost fast
-      CATKIN_DEPENDS roscpp roslib vikit_common vikit_ros
-      INCLUDE_DIRS include
-      LIBRARIES svo
-  )
-ELSE()
-  FIND_PACKAGE(vikit_common REQUIRED)
-  SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-  SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
-ENDIF()
+FIND_PACKAGE(vikit_common REQUIRED)
+SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 # Include dirs
 INCLUDE_DIRECTORIES(
@@ -82,13 +68,8 @@ LIST(APPEND LINK_LIBS
   ${fast_LIBRARIES}
 )
 
-IF(USE_ROS)
-  INCLUDE_DIRECTORIES(${catkin_INCLUDE_DIRS})
-  LIST(APPEND LINK_LIBS ${catkin_LIBRARIES})
-ELSE()
-  INCLUDE_DIRECTORIES(${vikit_common_INCLUDE_DIRS})
-  LIST(APPEND LINK_LIBS ${vikit_common_LIBRARIES})
-ENDIF()
+INCLUDE_DIRECTORIES(${vikit_common_INCLUDE_DIRS})
+LIST(APPEND LINK_LIBS ${vikit_common_LIBRARIES})
 
 # Set sourcefiles
 LIST(APPEND SOURCEFILES
@@ -125,26 +106,7 @@ ENDIF(HAVE_G2O)
 ADD_LIBRARY(svo SHARED ${SOURCEFILES})
 TARGET_LINK_LIBRARIES(svo ${LINK_LIBS})
 
-################################################################################
-# TESTS
+## Tracker executable
 
-ADD_EXECUTABLE(test_feature_align test/test_feature_alignment.cpp)
-TARGET_LINK_LIBRARIES(test_feature_align svo)
-
-ADD_EXECUTABLE(test_pipeline test/test_pipeline.cpp)
-TARGET_LINK_LIBRARIES(test_pipeline svo)
-
-ADD_EXECUTABLE(test_matcher test/test_matcher.cpp)
-TARGET_LINK_LIBRARIES(test_matcher svo)
-
-ADD_EXECUTABLE(test_feature_detection test/test_feature_detection.cpp)
-TARGET_LINK_LIBRARIES(test_feature_detection svo)
-
-ADD_EXECUTABLE(test_depth_filter test/test_depth_filter.cpp)
-TARGET_LINK_LIBRARIES(test_depth_filter svo)
-
-ADD_EXECUTABLE(test_sparse_img_align test/test_sparse_img_align.cpp)
-TARGET_LINK_LIBRARIES(test_sparse_img_align svo)
-
-ADD_EXECUTABLE(test_pose_optimizer test/test_pose_optimizer.cpp)
-TARGET_LINK_LIBRARIES(test_pose_optimizer svo) 
+ADD_EXECUTABLE(svo-tracker src/svo-tracker.cpp)
+TARGET_LINK_LIBRARIES(svo-tracker svo)
